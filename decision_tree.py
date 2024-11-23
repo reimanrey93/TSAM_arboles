@@ -134,7 +134,7 @@ def seleccionar_mejor_atributo(data, atributos, atributo_clase):
 
 from itertools import combinations
 
-def mejor_division_binaria(data, atributo, atributo_clase):
+def mejor_division_binaria(data, atributo, atributo_clase, criterio="entropia"):
     valores_unicos = np.unique(data[atributo])
     mejor_ganancia = -1
     mejor_grupo_izq = None
@@ -146,12 +146,17 @@ def mejor_division_binaria(data, atributo, atributo_clase):
             data_izq = data[data[atributo].isin(grupo_izq)]
             data_der = data[data[atributo].isin(grupo_der)]
 
-            entropia_izq = calcular_entropia(data_izq, atributo_clase)
-            entropia_der = calcular_entropia(data_der, atributo_clase)
+            if criterio == "entropia":
+                impureza_izq = calcular_entropia(data_izq, atributo_clase)
+                impureza_der = calcular_entropia(data_der, atributo_clase)
+            else:
+                impureza_izq = calcular_indice_gini(data_izq, atributo_clase)
+                impureza_der = calcular_indice_gini(data_der, atributo_clase)
+
             peso_izq = len(data_izq) / len(data)
             peso_der = len(data_der) / len(data)
 
-            ganancia = calcular_entropia(data, atributo_clase) - (peso_izq * entropia_izq + peso_der * entropia_der)
+            ganancia = (calcular_entropia(data, atributo_clase) if criterio == "entropia" else calcular_indice_gini(data, atributo_clase)) - (peso_izq * impureza_izq + peso_der * impureza_der)
 
             if ganancia > mejor_ganancia:
                 mejor_ganancia = ganancia
@@ -159,6 +164,7 @@ def mejor_division_binaria(data, atributo, atributo_clase):
                 mejor_grupo_der = grupo_der
 
     return mejor_grupo_izq, mejor_grupo_der, mejor_ganancia
+
 
 def construir_arbol_binario_categorico(data, atributos, atributo_clase, criterio="entropia"):
     clases_unicas = np.unique(data[atributo_clase])
